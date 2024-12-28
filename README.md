@@ -1,0 +1,1 @@
+# laravel_typed_model
