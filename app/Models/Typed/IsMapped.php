@@ -3,76 +3,32 @@
 namespace App\Models\Typed;
 
 use ReflectionClass;
-use ReflectionAttribute;
-use App\Models\Typed\Attributes\Map;
+use App\Models\Typed\Contracts\MapAttribute;
+use Illuminate\Database\Eloquent\Model;
 
 trait IsMapped
 {
     public static function booted()
     {
         parent::booted();
-        static::retrieved(function($model) {
-            $ref = new ReflectionClass(static::class);
-            $mappedProps = self::getPropertiesWithAttr($ref, Map::class);
-
-            foreach ($mappedProps as $prop) {
-                $model->{$prop->getNewName()} = $model->{$prop->getOriginalName()};
-            }
-        });
+        static::retrieved(fn ($model) => self::execMapAttributes($model));
     }
 
-    public static function getPropertiesWithAttr(ReflectionClass $cl, string $attrName): array
+    public static function execMapAttributes(Model $model)
     {
-        $props = $cl->getProperties();
-        $mappedProps = [];
+        $ref = new ReflectionClass(static::class);
+        $props = $ref->getProperties();
 
         foreach ($props as $prop) {
-            foreach ($prop->getAttributes() as $attr) {
-                if ($attr->getName() === $attrName) {
-                    $mappedProp = new MappedProp();
-                    $mappedProp->setOriginalName(self::getOriginalName($attr));
-                    $mappedProp->setNewName($prop->name);
-    
-                    $mappedProps[] = $mappedProp;
+            $propAttrs = $prop->getAttributes();
+
+            foreach ($propAttrs as $attr) {
+                $attrInstance = $attr->newInstance();
+
+                if ($attrInstance instanceof MapAttribute) {
+                    $attrInstance->exec($model, $prop);
                 }
             }
         }
-
-        return $mappedProps;
-    }
-
-    private static function getOriginalName(ReflectionAttribute $attr): string
-    {
-        if (array_key_exists('colName', $attr->getArguments())) {
-            return $attr->getArguments()['colName'];
-        }
-
-        return $attr->getArguments()[0];
-    }
-}
-
-class MappedProp
-{
-    private string $originalName;
-    private string $newName;
-
-    public function setOriginalName(string $name): void
-    {
-        $this->originalName = $name;
-    }
-
-    public function getOriginalName(): string
-    {
-        return $this->originalName;
-    }
-
-    public function setNewName(string $name)
-    {
-        $this->newName = $name;
-    }
-
-    public function getNewName(): string
-    {
-        return $this->newName;
     }
 }

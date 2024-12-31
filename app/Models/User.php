@@ -7,20 +7,20 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\Typed\IsMapped;
-use App\Models\Typed\Attributes\Map;
+use App\Models\Typed\Attributes\MapColumn;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, IsMapped;
 
-    #[Map('email')]
+    #[MapColumn('email')]
     public string $mail;
 
-    #[Map('first_name')]
+    #[MapColumn('first_name')]
     public ?string $firstName;
 
-    #[Map('last_name')]
+    #[MapColumn('last_name')]
     public ?string $lastName;
 
     /**
